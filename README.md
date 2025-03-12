@@ -1,25 +1,49 @@
-# React Email for Laravel
+# React Email for Symfony
 
-Easily send [React Email](https://react.email/) emails with Laravel using this package.
+Easily send [React Email](https://react.email/) emails with Symfony using this bundle.
+
+> This package is a Symfony adaptation of [laravel-react-email](https://github.com/maantje/laravel-react-email) by Jamie Schouten.
 
 ## Installation
 
-First, install the package via Composer:
+First, install the bundle via Composer:
 
 ```bash
-composer require maantje/react-email
+composer require mperonnet/symfony-react-email
 ```
 
 Then, install the required Node dependencies:
 
 ```bash
-npm install vendor/maantje/react-email
+npm install vendor/mperonnet/symfony-react-email
+```
+
+Register the bundle in your `config/bundles.php`:
+
+```php
+return [
+    // ...
+    Mperonnet\ReactEmail\ReactEmailBundle::class => ['all' => true],
+];
+```
+
+## Configuration
+
+Create a configuration file at `config/packages/react_email.yaml`:
+
+```yaml
+react_email:
+    template_directory: '%kernel.project_dir%/emails'
+    # Optional: custom path to node executable
+    # node_path: '/usr/local/bin/node'
+    # Optional: custom path to tsx executable
+    # tsx_path: '%kernel.project_dir%/node_modules/tsx/dist/cli.mjs'
 ```
 
 ## Getting Started
 
 1. Install React Email using the [automatic](https://react.email/docs/getting-started/automatic-setup) or [manual](https://react.email/docs/getting-started/manual-setup) setup.
-2. Create an email component in the `emails` directory (e.g., `new-user.tsx`). Ensure the component is the default export.
+2. Create an email component in the configured `template_directory` (e.g., `emails/new-user.tsx`). Ensure the component is the default export.
 
 Example email component:
 
@@ -36,59 +60,67 @@ export default function Email({ user }) {
 }
 ```
 
-3. Define the email directory path in your Laravel `.env` file:
-
-```env
-REACT_EMAIL_DIRECTORY="emails/directory/relative/from/laravel/root"
-```
-
-4. Generate a new Laravel Mailable class:
-
-```bash
-php artisan make:mail NewUser
-```
-
-5. Use `ReactMailView` in your `Mailable`, or extend your `Mailable` from `ReactMailable``
+3. Use the `ReactEmailFactory` service to create and send emails:
 
 ```php
-use App\Models\User;
-use Maantje\ReactEmail\ReactMailable;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Content;
-use Maantje\ReactEmail\ReactMailView;
+use Mperonnet\ReactEmail\ReactEmailFactory;
+use Symfony\Component\Mailer\MailerInterface;
 
-class NewUser extends ReactMailable // Extend, from \Maantje\ReactEmail\ReactMailable
+class UserController
 {
-    use ReactMailView; // or use \Maantje\ReactEmail\ReactMailView
+    private ReactEmailFactory $emailFactory;
+    private MailerInterface $mailer;
     
-    public function __construct(public User $user)
-    {
-        // Public properties will be passed as props to the React email component.
-        // Alternatively, use the `with` property of `content`.
+    public function __construct(
+        ReactEmailFactory $emailFactory,
+        MailerInterface $mailer
+    ) {
+        $this->emailFactory = $emailFactory;
+        $this->mailer = $mailer;
     }
     
-    public function envelope()
+    public function createUser()
     {
-        return new Envelope(
-            subject: 'New User',
-        );
-    }
-
-    public function content()
-    {
-        return new Content(
-            view: 'new-user', // Component filename without the extension
-        );
+        // Create a user...
+        $user = [
+            'name' => 'John Doe',
+            'email' => 'john@example.com'
+        ];
+        
+        // Create email with React component
+        $email = $this->emailFactory->create('new-user', [
+            'user' => $user
+        ]);
+        
+        // Set additional email properties
+        $email->subject('Welcome to our platform!')
+            ->from('noreply@example.com')
+            ->to($user['email']);
+            
+        // Send the email
+        $this->mailer->send($email);
+        
+        // ...
     }
 }
 ```
 
+## Environment Variables
+
+You can also configure the bundle using environment variables:
+
+```env
+REACT_EMAIL_DIRECTORY=path/to/email/templates
+REACT_EMAIL_NODE_PATH=/custom/path/to/node
+REACT_EMAIL_TSX_PATH=/custom/path/to/tsx
+```
+
 ## Running Tests
 
-Run tests using [Pest](https://pestphp.com/):
+Run tests using PHPUnit:
 
 ```bash
-./vendor/bin/pest
+./vendor/bin/phpunit
 ```
 
 ## Security
@@ -97,5 +129,4 @@ If you discover any security-related issues, please email the author instead of 
 
 ## License
 
-This package is open-source and licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.~~
-
+This bundle is open-source and licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.

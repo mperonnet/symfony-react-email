@@ -1,33 +1,13 @@
 <?php
 
-namespace Maantje\ReactEmail;
+namespace Mperonnet\ReactEmail;
 
-use Illuminate\Support\ServiceProvider;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class ReactEmailServiceProvider extends ServiceProvider
+class ReactEmailBundle extends Bundle
 {
-    /**
-     * Bootstrap any package services.
-     *
-     * @return void
-     */
-    public function boot(): void
+    public function getPath(): string
     {
-        $this->publishes([
-            __DIR__.'/../config/react-email.php' => config_path('react-email.php'),
-        ]);
-    }
-
-
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register(): void
-    {
-        $this->mergeConfigFrom(
-            __DIR__.'/../config/react-email.php', 'react-email'
-        );
+        return \dirname(__DIR__);
     }
 }

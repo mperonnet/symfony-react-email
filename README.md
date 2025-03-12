@@ -1,25 +1,49 @@
-# React Email for Laravel
+# React Email for Symfony
 
-Easily send [React Email](https://react.email/) emails with Laravel using this package.
+Easily render [React Email](https://react.email/) templates with Symfony using this bundle.
+
+> This package is a Symfony adaptation of [laravel-react-email](https://github.com/maantje/laravel-react-email) by Jamie Schouten.
 
 ## Installation
 
-First, install the package via Composer:
+First, install the bundle via Composer:
 
 ```bash
-composer require maantje/react-email
+composer require mperonnet/symfony-react-email
 ```
 
 Then, install the required Node dependencies:
 
 ```bash
-npm install vendor/maantje/react-email
+npm install vendor/mperonnet/symfony-react-email
+```
+
+Register the bundle in your `config/bundles.php`:
+
+```php
+return [
+    // ...
+    Mperonnet\ReactEmail\ReactEmailBundle::class => ['all' => true],
+];
+```
+
+## Configuration
+
+Create a configuration file at `config/packages/react_email.yaml`:
+
+```yaml
+react_email:
+    template_directory: '%kernel.project_dir%/emails'
+    # Optional: custom path to node executable
+    # node_path: '/usr/local/bin/node'
+    # Optional: custom path to tsx executable
+    # tsx_path: '%kernel.project_dir%/node_modules/tsx/dist/cli.mjs'
 ```
 
 ## Getting Started
 
 1. Install React Email using the [automatic](https://react.email/docs/getting-started/automatic-setup) or [manual](https://react.email/docs/getting-started/manual-setup) setup.
-2. Create an email component in the `emails` directory (e.g., `new-user.tsx`). Ensure the component is the default export.
+2. Create an email component in the configured `template_directory` (e.g., `emails/new-user.tsx`). Ensure the component is the default export.
 
 Example email component:
 
@@ -36,56 +60,126 @@ export default function Email({ user }) {
 }
 ```
 
-3. Define the email directory path in your Laravel `.env` file:
-
-```env
-REACT_EMAIL_DIRECTORY="emails/directory/relative/from/laravel/root"
-```
-
-4. Generate a new Laravel Mailable class:
-
-```bash
-php artisan make:mail NewUser
-```
-
-5. Use `ReactMailView` in your `Mailable`, or extend your `Mailable` from `ReactMailable``
+3. Use the `ReactEmailRenderer` service to render your email templates:
 
 ```php
-use App\Models\User;
-use Maantje\ReactEmail\ReactMailable;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Mail\Mailables\Content;
-use Maantje\ReactEmail\ReactMailView;
+use Mperonnet\ReactEmail\ReactEmailRenderer;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 
-class NewUser extends ReactMailable // Extend, from \Maantje\ReactEmail\ReactMailable
+class UserController
 {
-    use ReactMailView; // or use \Maantje\ReactEmail\ReactMailView
+    private ReactEmailRenderer $emailRenderer;
+    private MailerInterface $mailer;
     
-    public function __construct(public User $user)
-    {
-        // Public properties will be passed as props to the React email component.
-        // Alternatively, use the `with` property of `content`.
+    public function __construct(
+        ReactEmailRenderer $emailRenderer,
+        MailerInterface $mailer
+    ) {
+        $this->emailRenderer = $emailRenderer;
+        $this->mailer = $mailer;
     }
     
-    public function envelope()
+    public function createUser()
     {
-        return new Envelope(
-            subject: 'New User',
-        );
+        // Create a user...
+        $user = [
+            'name' => 'John Doe',
+            'email' => 'john@example.com'
+        ];
+        
+        // Render the email template
+        $content = $this->emailRenderer->render('new-user', [
+            'user' => $user
+        ]);
+        
+        // Create a Symfony Email object
+        $email = (new Email())
+            ->html($content->html)
+            ->text($content->text)
+            ->subject('Welcome to our platform!')
+            ->from('noreply@example.com')
+            ->to($user['email']);
+            
+        // Send the email
+        $this->mailer->send($email);
+        
+        // ...
     }
+}
+```
 
-    public function content()
+## ReactEmailContent Structure
+
+The `ReactEmailRenderer::render()` method returns a `ReactEmailContent` object with the following properties:
+
+```php
+class ReactEmailContent
+{
+    public readonly string $html; // The rendered HTML version of the email
+    public readonly string $text; // The rendered plain text version of the email
+}
+```
+
+## Advanced Usage
+
+### Direct Integration with Symfony Mailer
+
+The example below shows how to use the renderer with Symfony Mailer:
+
+```php
+// Render the email template
+$content = $this->emailRenderer->render('welcome-email', [
+    'user' => $user,
+    'resetLink' => $resetLink
+]);
+
+// Create and configure a Symfony Email object
+$email = (new Email())
+    ->html($content->html)
+    ->text($content->text)
+    ->subject('Welcome to our Application')
+    ->from('noreply@example.com')
+    ->to($user->getEmail());
+
+// Send the email
+$this->mailer->send($email);
+```
+
+### Use with Symfony Messenger
+
+You can also use this with Symfony Messenger for asynchronous email sending:
+
+```php
+// In your controller/service
+$this->messageBus->dispatch(new SendEmailMessage(
+    'welcome-email',
+    ['user' => ['name' => $user->getName(), 'email' => $user->getEmail()]],
+    'Welcome to our Platform!'
+));
+
+// In your message handler
+class SendEmailMessageHandler
+{
+    public function __invoke(SendEmailMessage $message)
     {
-        return new Content(
-            view: 'new-user', // Component filename without the extension
-        );
+        $content = $this->emailRenderer->render($message->template, $message->data);
+        
+        $email = (new Email())
+            ->html($content->html)
+            ->text($content->text)
+            ->subject($message->subject)
+            ->from('noreply@example.com')
+            ->to($message->data['user']['email']);
+            
+        $this->mailer->send($email);
     }
 }
 ```
 
 ## Running Tests
 
-Run tests using [Pest](https://pestphp.com/):
+Run tests using PEST:
 
 ```bash
 ./vendor/bin/pest
@@ -97,5 +191,4 @@ If you discover any security-related issues, please email the author instead of 
 
 ## License
 
-This package is open-source and licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.~~
-
+This bundle is open-source and licensed under the MIT License. See the [LICENSE](/LICENSE) file for details.

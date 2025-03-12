@@ -1,34 +1,37 @@
 {
-    "name": "maantje/react-email",
-    "description": "React email for Laravel",
-    "keywords": ["laravel", "react", "react email"],
-    "homepage": "https://github.com/maantje/laravel-react-email",
-    "type": "library",
+    "name": "mperonnet/symfony-react-email",
+    "description": "React email for Symfony",
+    "keywords": ["symfony", "react", "react email"],
+    "homepage": "https://github.com/mperonnet/symfony-react-email",
+    "type": "symfony-bundle",
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Maantje\\ReactEmail\\": "src/"
+            "Mperonnet\\ReactEmail\\": "src/"
         }
     },
     "authors": [
         {
-            "name": "Jamie Schouten",
-            "email": "j4mie@hey.com"
+            "name": "Matteo Peronnet",
+            "email": "matteo-peronnet@hotmail.fr"
         }
     ],
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Maantje\\ReactEmail\\ReactEmailServiceProvider"
-            ]
-        }
+    "require": {
+        "php": "^8.0",
+        "symfony/http-kernel": "^5.4|^6.0|^7.0",
+        "symfony/dependency-injection": "^5.4|^6.0|^7.0",
+        "symfony/config": "^5.4|^6.0|^7.0",
+        "symfony/process": "^5.4|^6.0|^7.0",
+        "symfony/mailer": "^5.4|^6.0|^7.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^7.20 || ^8.0 || ^9.0 || ^10",
-        "pestphp/pest": "^1.20 || ^2.0 || ^3"
+        "phpunit/phpunit": "^9.5|^10.0|^11.5.3",
+        "pestphp/pest": "^1.20 || ^2.0 || ^3",
+        "orchestra/testbench": "^8.0|^9.0"
     },
     "config": {
         "allow-plugins": {
+            "symfony/flex": true,
             "pestphp/pest-plugin": true
         }
     }

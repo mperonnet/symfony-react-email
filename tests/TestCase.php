@@ -1,23 +1,24 @@
 <?php
 
-use Maantje\ReactEmail\ReactEmailServiceProvider;
+use Mperonnet\ReactEmail\ReactEmailServiceProvider;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 
-class TestCase extends \Orchestra\Testbench\TestCase
+class TestCase extends \PHPUnit\Framework\TestCase
 {
-    protected function getPackageProviders($app): array
-    {
-        return [
-            ReactEmailServiceProvider::class
-        ];
-    }
+    protected ParameterBag $params;
+    protected ContainerBuilder $container;
 
-    protected function defineEnvironment($app): void
+    protected function setUp(): void
     {
-        $app['config']->set('react-email.template_directory', __DIR__ . '/emails/');
-    }
+        parent::setUp();
 
-    protected function getEnvironmentSetUp($app): void
-    {
-        $app->setBasePath(__DIR__ . '/..');
+        $this->params = new ParameterBag([
+            'react_email.template_directory' => __DIR__ . '/emails',
+            'react_email.node_path' => exec('which node'),
+            'react_email.tsx_path' => __DIR__ . '/../node_modules/tsx/dist/cli.mjs',
+        ]);
+
+        $this->container = new ContainerBuilder($this->params);
     }
 }

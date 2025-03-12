@@ -1,28 +1,20 @@
 <?php
 
-namespace Maantje\ReactEmail;
+namespace Mperonnet\ReactEmail;
 
-use Maantje\ReactEmail\Exceptions\NodeNotFoundException;
+use Mperonnet\ReactEmail\Exceptions\NodeNotFoundException;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
-class Renderer extends Process
+class Renderer
 {
-    /**
-     * @param string $view
-     * @param array $data
-     * @throws NodeNotFoundException
-     */
-    private function __construct(string $view, array $data = [])
+    private ParameterBagInterface $params;
+
+    public function __construct(ParameterBagInterface $params)
     {
-        parent::__construct([
-            $this->resolveNodeExecutable(),
-            config('react-email.tsx_path') ?? base_path('/node_modules/tsx/dist/cli.mjs'),
-            __DIR__ .'/../render.tsx',
-            config('react-email.template_directory') . $view,
-            json_encode($data)
-        ], base_path());
+        $this->params = $params;
     }
 
     /**
@@ -33,9 +25,15 @@ class Renderer extends Process
      * @return array
      * @throws NodeNotFoundException
      */
-    public static function render(string $view, array $data): array
+    public function render(string $view, array $data = []): array
     {
-        $process = new self($view, $data);
+        $process = new Process([
+            $this->resolveNodeExecutable(),
+            $this->params->get('react_email.tsx_path'),
+            dirname(__DIR__) . '/render.tsx',
+            $this->params->get('react_email.template_directory') . '/' . $view,
+            json_encode($data)
+        ], dirname(__DIR__, 2)); // Move up to the project root
 
         $process->run();
 
@@ -52,15 +50,15 @@ class Renderer extends Process
      * @return string
      * @throws NodeNotFoundException
      */
-    public static function resolveNodeExecutable(): string
+    public function resolveNodeExecutable(): string
     {
-        if ($executable = config('react-email.node_path') ?? app(ExecutableFinder::class)->find('node'))
+        if ($executable = $this->params->get('react_email.node_path') ?? (new ExecutableFinder())->find('node'))
         {
             return $executable;
         }
 
         throw new NodeNotFoundException(
-            'Unable to resolve node path automatically, please provide a configuration value in react-emails'
+            'Unable to resolve node path automatically, please provide a configuration value in react_email.yaml'
         );
     }
 }

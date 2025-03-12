@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    tty: true
+    environment:
+      - COMPOSER_ALLOW_SUPERUSER=1
+    command: tail -f /dev/null

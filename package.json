@@ -1,6 +1,6 @@
 {
-  "name": "@maantje/react-email",
-  "homepage": "https://github.com/maantje/laravel-react-email#readme",
+  "name": "@mperonnet/react-email",
+  "homepage": "https://github.com/mperonnet/symfony-react-email#readme",
   "license": "MIT",
   "dependencies": {
     "@react-email/render": "^1.0.5",

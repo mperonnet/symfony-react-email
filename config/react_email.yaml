@@ -1,0 +1,4 @@
+react_email:
+    template_directory: '%kernel.project_dir%/emails'
+    node_path: ~  # Set this to custom node path if needed
+    tsx_path: ~   # Set this to custom tsx path if needed

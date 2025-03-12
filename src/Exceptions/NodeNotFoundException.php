@@ -1,6 +1,6 @@
 <?php
 
-namespace Maantje\ReactEmail\Exceptions;
+namespace Mperonnet\ReactEmail\Exceptions;
 
 use Exception;
 
